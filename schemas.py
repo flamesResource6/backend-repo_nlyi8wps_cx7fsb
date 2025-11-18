@@ -1,48 +1,50 @@
 """
-Database Schemas
+Database Schemas for Gulf Global Tours
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model below represents a MongoDB collection. The collection
+name is the lowercase of the class name (e.g., Trip -> "trip").
 """
+from pydantic import BaseModel, Field, EmailStr
+from typing import List, Optional
+from datetime import date
 
-from pydantic import BaseModel, Field
-from typing import Optional
+class Trip(BaseModel):
+    title: str = Field(..., description="Trip display name")
+    trip_type: str = Field(..., description="Unique key, e.g., 'dimaniyat' or 'sunset'")
+    description: str = Field(..., description="Detailed description of the trip")
+    location: str = Field(..., description="Primary location")
+    price_per_person: float = Field(..., ge=0, description="Price per guest in OMR")
+    capacity: int = Field(..., ge=1, description="Maximum guests per departure")
+    duration_hours: float = Field(..., gt=0, description="Duration in hours")
+    highlights: List[str] = Field(default_factory=list, description="Key highlights")
+    includes: List[str] = Field(default_factory=list, description="What’s included")
+    images: List[str] = Field(default_factory=list, description="Image URLs")
+    is_active: bool = Field(default=True)
 
-# Example schemas (replace with your own):
+class Booking(BaseModel):
+    trip_type: str = Field(..., description="Trip key the booking is for")
+    name: str
+    email: EmailStr
+    phone: str
+    date: date
+    people_count: int = Field(..., ge=1)
+    notes: Optional[str] = None
+    status: str = Field(default="pending", description="pending|confirmed|cancelled")
 
-class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+class Review(BaseModel):
+    name: str
+    rating: int = Field(..., ge=1, le=5)
+    comment: str
+    trip_type: Optional[str] = Field(default=None, description="Optional trip key")
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+class FAQ(BaseModel):
+    question: str
+    answer: str
+    category: Optional[str] = Field(default="general")
+    order: int = Field(default=0)
 
-# Add your own schemas here:
-# --------------------------------------------------
-
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Inquiry(BaseModel):
+    name: str
+    email: EmailStr
+    subject: str
+    message: str
